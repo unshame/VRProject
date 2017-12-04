@@ -85,17 +85,11 @@ namespace Characters.FirstPerson
             if (Mathf.Abs(input.x) > float.Epsilon || Mathf.Abs(input.y) > float.Epsilon)
             {
                 Vector3 desiredMove = cam.transform.forward*input.y + cam.transform.right*input.x;
-                desiredMove = Vector3.ProjectOnPlane(desiredMove, m_GroundContactNormal).normalized;
+               // desiredMove = Vector3.ProjectOnPlane(desiredMove, m_GroundContactNormal).normalized;
 
                 desiredMove.x = desiredMove.x*movementSettings.Acceleration;
-                if (Math.Sign(desiredMove.x) == Math.Sign(m_RigidBody.velocity.x) && Math.Abs(m_RigidBody.velocity.x) > movementSettings.Acceleration * 3) {
-                    desiredMove.x = 0;
-                }
 
                 desiredMove.z = desiredMove.z*movementSettings.Acceleration;
-                if (Math.Sign(desiredMove.z) == Math.Sign(m_RigidBody.velocity.z) && Math.Abs(m_RigidBody.velocity.z) > movementSettings.Acceleration * 3) {
-                    desiredMove.z = 0;
-                }
 
                 desiredMove.y = desiredMove.y*movementSettings.Acceleration;
 
@@ -122,7 +116,7 @@ namespace Characters.FirstPerson
             if (!m_AudioSkiing.isPlaying) {
                 m_AudioSkiing.Play();
             }
-            // Debug.Log(m_RigidBody.velocity);
+            Debug.Log(speed);
         }
 
 
