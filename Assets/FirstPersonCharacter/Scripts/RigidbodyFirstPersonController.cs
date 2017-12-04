@@ -13,6 +13,7 @@ namespace Characters.FirstPerson
         {
             public float JetForce = 10f;
             public float Acceleration = 2f;
+            public float AccelerationVerticalMultipier = 1.2f;
             public float HighSpeed = 50f;
         }
 
@@ -37,7 +38,6 @@ namespace Characters.FirstPerson
         private Rigidbody m_RigidBody;
         private CapsuleCollider m_Capsule;
         private float m_YRotation;
-        private Vector3 m_GroundContactNormal;
         private bool m_PreviouslyGrounded, m_IsGrounded;
         private AudioSource m_AudioSkiing;
         private AudioSource m_AudioWind;
@@ -85,13 +85,12 @@ namespace Characters.FirstPerson
             if (Mathf.Abs(input.x) > float.Epsilon || Mathf.Abs(input.y) > float.Epsilon)
             {
                 Vector3 desiredMove = cam.transform.forward*input.y + cam.transform.right*input.x;
-               // desiredMove = Vector3.ProjectOnPlane(desiredMove, m_GroundContactNormal).normalized;
 
                 desiredMove.x = desiredMove.x*movementSettings.Acceleration;
 
                 desiredMove.z = desiredMove.z*movementSettings.Acceleration;
 
-                desiredMove.y = desiredMove.y*movementSettings.Acceleration;
+                desiredMove.y = desiredMove.y*movementSettings.Acceleration*movementSettings.AccelerationVerticalMultipier;
 
                 m_RigidBody.AddForce(desiredMove, ForceMode.Impulse);
             }
@@ -159,12 +158,10 @@ namespace Characters.FirstPerson
                                    ((m_Capsule.height/2f) - m_Capsule.radius) + advancedSettings.groundCheckDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
             {
                 m_IsGrounded = true;
-                m_GroundContactNormal = hitInfo.normal;
             }
             else
             {
                 m_IsGrounded = false;
-                m_GroundContactNormal = Vector3.up;
             }
         }
     }
