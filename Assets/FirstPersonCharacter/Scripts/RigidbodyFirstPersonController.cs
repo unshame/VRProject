@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Characters.FirstPerson
 {
@@ -9,118 +10,170 @@ namespace Characters.FirstPerson
     public class RigidbodyFirstPersonController : MonoBehaviour
     {
         [Serializable]
-        public class MovementSettings
-        {
-            public float JetForce = 10f;
-            public float Acceleration = 2f;
-            public float AccelerationVerticalMultipier = 1.2f;
-            public float HighSpeed = 50f;
+        public class JetpackSettings {
+            public float force = 2f;
+            public float verticleMultiplier = 1.2f;
+            public float highSpeed = 50f;
+            public float fuelMax = 200;
+            public float fuelUsageRate = 100;
+            public float fuelUsageDelay = 0.5f;
+            public float fuelUsageThreshold = 30f;
+            public float fuelRestoringRate = 150;
+            public float fuelRestoringDelay = 0.5f;
         }
 
 
         [Serializable]
-        public class AdvancedSettings
-        {
+        public class AdvancedSettings {
             public float groundCheckDistance = 0.01f; // distance for checking if the controller is grounded ( 0.01f seems to work best for this )
-            public bool airControl = true; // can the user control the direction that is being moved in the air
             [Tooltip("set it to 0.1 or more if you get stuck in wall")]
             public float shellOffset = 0.1f; //reduce the radius by that ratio to avoid getting stuck in wall (a value of 0.1f is nice)
         }
 
+        public Text jetpackFuelCounter;
+        public Text speedCounter;
 
         public Camera cam;
-        public GameObject sphere;
+
         public AudioClip soundJet, soundSkiSlow, soundSkiFast, soundWind;
-        public MovementSettings movementSettings = new MovementSettings();
+        public JetpackSettings jetpackSettings = new JetpackSettings();
         public MouseLook mouseLook = new MouseLook();
         public AdvancedSettings advancedSettings = new AdvancedSettings();
 
-        private Rigidbody m_RigidBody;
-        private CapsuleCollider m_Capsule;
-        private float m_YRotation;
-        private bool m_PreviouslyGrounded, m_IsGrounded;
-        private AudioSource m_AudioSkiing;
-        private AudioSource m_AudioWind;
+        private Rigidbody rigidBody;
+        private CapsuleCollider capsule;
+        private AudioSource audioSkiing, audioWind, audioJet;
 
+        private bool isGrounded;
 
-        public Vector3 Velocity
-        {
-            get { return m_RigidBody.velocity; }
+        private float jetpackFuel;
+        private bool isJetting = false;
+        private bool isJetRestoring = false;
+        private float jetEndedTime;
+        private float jetRestoringStartedTime;
+
+        public Vector3 Velocity {
+            get { return rigidBody.velocity; }
         }
 
-        public bool Grounded
-        {
-            get { return m_IsGrounded; }
+        public bool Grounded {
+            get { return isGrounded; }
         }
 
-
-        private void Start()
-        {
-            m_RigidBody = GetComponent<Rigidbody>();
-            m_Capsule = GetComponent<CapsuleCollider>();
-            mouseLook.Init (sphere.transform, cam.transform);
+        private void Start() {
+            rigidBody = GetComponent<Rigidbody>();
+            capsule = GetComponent<CapsuleCollider>();
+            mouseLook.Init(rigidBody.transform, cam.transform);
             var aSources = GetComponents<AudioSource>();
-            m_AudioSkiing = aSources[0];
-            m_AudioSkiing.clip = soundJet;
-            m_AudioSkiing.Play();
-            m_AudioWind = aSources[1];
-            m_AudioWind.clip = soundWind;
-            m_AudioWind.Play();
+            audioSkiing = aSources[0];
+            audioSkiing.clip = soundSkiSlow;
+            audioSkiing.Play();
+            audioWind = aSources[1];
+            audioWind.clip = soundWind;
+            audioWind.Play();
+            audioJet = aSources[2];
+            audioJet.clip = soundJet;
+            audioJet.Play();
+
+            SetJetpackFuel(jetpackSettings.fuelMax);
         }
 
 
-        private void Update()
-        {
+        private void Update() {
             RotateView();
         }
 
 
-        private void FixedUpdate()
-        {
+        private void FixedUpdate() {
             GroundCheck();
-            Vector2 input = GetInput();
-            
-            var isJumping = Input.GetButton("Jump");
+            HandleInput();
 
-            if (Mathf.Abs(input.x) > float.Epsilon || Mathf.Abs(input.y) > float.Epsilon)
-            {
-                Vector3 desiredMove = cam.transform.forward*input.y + cam.transform.right*input.x;
+            var speed = Vector3.Distance(rigidBody.velocity, Vector3.zero);
+            DisplaySpeed(speed);
+            AdjustWindSound(speed);
+            AdjustSkiSound(speed);
 
-                desiredMove.x = desiredMove.x*movementSettings.Acceleration;
-
-                desiredMove.z = desiredMove.z*movementSettings.Acceleration;
-
-                desiredMove.y = desiredMove.y*movementSettings.Acceleration*movementSettings.AccelerationVerticalMultipier;
-
-                m_RigidBody.AddForce(desiredMove, ForceMode.Impulse);
-            }
-
-            var speed = Vector3.Distance(m_RigidBody.velocity, Vector3.zero);
-            m_AudioWind.volume = Math.Max(0.1f, Math.Min(movementSettings.HighSpeed, speed) / movementSettings.HighSpeed);
-            m_AudioWind.pitch = Math.Min(movementSettings.HighSpeed, speed) / movementSettings.HighSpeed / 2 + 1;
-            if (isJumping) {
-                m_AudioSkiing.clip = soundJet;
-                m_AudioSkiing.mute = false;
-                m_AudioSkiing.volume = 0.9f;
-                m_RigidBody.AddForce(new Vector3(0, movementSettings.JetForce * Time.deltaTime, 0), ForceMode.Impulse);
-            }
-            else if (m_IsGrounded && speed > 1) {
-                m_AudioSkiing.clip = speed > movementSettings.HighSpeed ? soundSkiFast : soundSkiSlow;
-                m_AudioSkiing.mute = false;
-                m_AudioWind.volume = Math.Max(0.6f, Math.Min(movementSettings.HighSpeed, speed) / movementSettings.HighSpeed);
-                m_AudioWind.pitch = Math.Min(movementSettings.HighSpeed, speed) / movementSettings.HighSpeed / 2 + 1;
-            } else {
-                m_AudioSkiing.mute = true;
-            }
-            if (!m_AudioSkiing.isPlaying) {
-                m_AudioSkiing.Play();
-            }
-            Debug.Log(speed);
+            // Debug.Log(speed);
         }
 
+        private void SetJetpackFuel(float fuel) {
+            jetpackFuel = fuel;
+            jetpackFuelCounter.text = "Fuel: " + Math.Floor(fuel).ToString();
+        }
 
-        private Vector2 GetInput()
-        {
+        private void DisplaySpeed(float speed) {
+            speedCounter.text = "Speed: " + Math.Floor(speed * 3.6).ToString() + "km/h";
+        }
+
+        private void HandleInput() {
+            Vector2 input = GetInput();
+
+            float fuelRequired = Time.deltaTime * jetpackSettings.fuelUsageRate;
+
+            if (
+                (Mathf.Abs(input.x) > float.Epsilon || Mathf.Abs(input.y) > float.Epsilon) && 
+                jetpackFuel - fuelRequired > 0 && (!isJetRestoring || jetpackFuel > jetpackSettings.fuelUsageThreshold || Time.time - jetRestoringStartedTime > jetpackSettings.fuelUsageDelay)
+            ) {
+
+                Vector3 desiredMove = cam.transform.forward * input.y + cam.transform.right * input.x;
+
+                desiredMove.x = desiredMove.x * jetpackSettings.force;
+
+                desiredMove.z = desiredMove.z * jetpackSettings.force;
+
+                desiredMove.y = desiredMove.y * jetpackSettings.force * jetpackSettings.verticleMultiplier;
+
+                rigidBody.AddForce(desiredMove, ForceMode.Impulse);
+
+                SetJetpackFuel(jetpackFuel - fuelRequired);
+
+                isJetting = true;
+                isJetRestoring = false;
+                jetEndedTime = Time.time;
+            }
+            else {
+                if (jetpackFuel < jetpackSettings.fuelMax && Time.time - jetEndedTime > jetpackSettings.fuelRestoringDelay) {
+                    SetJetpackFuel(Math.Min(jetpackFuel + Time.deltaTime * jetpackSettings.fuelRestoringRate, jetpackSettings.fuelMax));
+                }
+                isJetting = false;
+                if (!isJetRestoring) {
+                    isJetRestoring = true;
+                    jetRestoringStartedTime = Time.time;
+                }
+            }
+
+            if(isJetting && (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.A))) {
+                audioJet.mute = false;
+                if (!audioJet.isPlaying) {
+                    audioJet.Play();
+                }
+            }
+            else {
+                audioJet.mute = true;
+            }
+        }
+
+        private void AdjustWindSound(float speed) {
+            audioWind.volume = Math.Max(0.1f, Math.Min(jetpackSettings.highSpeed, speed) / jetpackSettings.highSpeed);
+            audioWind.pitch = Math.Min(jetpackSettings.highSpeed, speed) / jetpackSettings.highSpeed / 2 + 1;
+        }
+
+        private void AdjustSkiSound(float speed) {
+            if (isGrounded && speed > 1) {
+                audioSkiing.clip = speed > jetpackSettings.highSpeed ? soundSkiFast : soundSkiSlow;
+                audioSkiing.mute = false;
+                audioWind.volume = Math.Max(0.6f, Math.Min(jetpackSettings.highSpeed, speed) / jetpackSettings.highSpeed);
+                audioWind.pitch = Math.Min(jetpackSettings.highSpeed, speed) / jetpackSettings.highSpeed / 2 + 1;
+            }
+            else {
+                audioSkiing.mute = true;
+            }
+            if (!audioSkiing.isPlaying) {
+                audioSkiing.Play();
+            }
+        }
+
+        private Vector2 GetInput() {
             
             Vector2 input = new Vector2
                 {
@@ -131,38 +184,28 @@ namespace Characters.FirstPerson
         }
 
 
-        private void RotateView()
-        {
+        private void RotateView() {
             //avoids the mouse looking if the game is effectively paused
             if (Mathf.Abs(Time.timeScale) < float.Epsilon) return;
 
             // get the rotation before it's changed
             float oldYRotation = transform.eulerAngles.y;
 
-            mouseLook.LookRotation (sphere.transform, cam.transform);
-
-            if (m_IsGrounded || advancedSettings.airControl)
-            {
-                // Rotate the rigidbody velocity to match the new direction that the character is looking
-                Quaternion velRotation = Quaternion.AngleAxis(transform.eulerAngles.y - oldYRotation, Vector3.up);
-                m_RigidBody.velocity = velRotation*m_RigidBody.velocity;
-            }
+            mouseLook.LookRotation (rigidBody.transform, cam.transform);
         }
 
         /// sphere cast down just beyond the bottom of the capsule to see if the capsule is colliding round the bottom
-        private void GroundCheck()
-        {
-            m_PreviouslyGrounded = m_IsGrounded;
+        private void GroundCheck() {
             RaycastHit hitInfo;
-            if (Physics.SphereCast(transform.position, m_Capsule.radius * (1.0f - advancedSettings.shellOffset), Vector3.down, out hitInfo,
-                                   ((m_Capsule.height/2f) - m_Capsule.radius) + advancedSettings.groundCheckDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
-            {
-                m_IsGrounded = true;
-            }
-            else
-            {
-                m_IsGrounded = false;
-            }
+            isGrounded = Physics.SphereCast(
+                transform.position,
+                capsule.radius * (1.0f - advancedSettings.shellOffset),
+                Vector3.down,
+                out hitInfo,
+                ((capsule.height / 2f) - capsule.radius) + advancedSettings.groundCheckDistance,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Ignore
+            );
         }
     }
 }
