@@ -51,7 +51,7 @@ public class GrapplingHook : MonoBehaviour {
         }
 
         if (isHooked) {
-            if (Vector3.Distance(cam.transform.position, hit.point) > distance + addedRadius) {
+            if (Vector3.Distance(cam.transform.position, hit.point) > distance + addedRadius/2) {
                 AttachHook();
             }
             else {
