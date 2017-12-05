@@ -20,6 +20,9 @@ namespace Characters.FirstPerson
             public float fuelUsageThreshold = 30f;
             public float fuelRestoringRate = 150;
             public float fuelRestoringDelay = 0.5f;
+            public float maxSpeed = 60f;
+            public float belowSpeedLimitDrag = 0f;
+            public float aboveSpeedLimitDrag = 1f;
         }
 
 
@@ -88,12 +91,23 @@ namespace Characters.FirstPerson
             GroundCheck();
             HandleInput();
 
-            var speed = Vector3.Distance(rigidBody.velocity, Vector3.zero);
+            var speed = GetAdjustedSpeed(Vector3.Distance(rigidBody.velocity, Vector3.zero));
             DisplaySpeed(speed);
             AdjustWindSound(speed);
             AdjustSkiSound(speed);
 
             // Debug.Log(speed);
+        }
+
+        public float GetAdjustedSpeed(float speed) {
+            if(speed > jetpackSettings.maxSpeed) {
+                rigidBody.drag = jetpackSettings.aboveSpeedLimitDrag;
+                return Vector3.Distance(rigidBody.velocity, Vector3.zero);
+            }
+            else {
+                rigidBody.drag = jetpackSettings.belowSpeedLimitDrag;
+                return speed;
+            }
         }
 
         private void SetJetpackFuel(float fuel) {

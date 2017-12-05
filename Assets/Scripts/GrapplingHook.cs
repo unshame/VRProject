@@ -40,6 +40,8 @@ public class GrapplingHook : MonoBehaviour {
         collider.sharedMesh = filter.mesh;
 
         rope = GetComponent<LineRenderer>();
+
+        ResetRope();
     }
 	
 	void Update () {

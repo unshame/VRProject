@@ -5821,6 +5821,21 @@ Prefab:
       propertyPath: m_Layer
       value: 11
       objectReference: {fileID: 0}
+    - target: {fileID: 114396581652452966, guid: c6453f8e1f814744d8b94e5a6d1f9942,
+        type: 2}
+      propertyPath: jetpackSettings.maxSpeed
+      value: 55
+      objectReference: {fileID: 0}
+    - target: {fileID: 114396581652452966, guid: c6453f8e1f814744d8b94e5a6d1f9942,
+        type: 2}
+      propertyPath: jetpackSettings.aboveSpeedLimitDrag
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114396581652452966, guid: c6453f8e1f814744d8b94e5a6d1f9942,
+        type: 2}
+      propertyPath: jetpackSettings.highSpeed
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 2}
   m_IsPrefabParent: 0
