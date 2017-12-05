@@ -8,6 +8,7 @@ using UnityEngine;
 public class GrapplingHook : MonoBehaviour {
 
     public Camera cam;
+    public Rigidbody body;
     public float maxDistance = 100;
     public float addedRadius = 1;
 
@@ -53,7 +54,7 @@ public class GrapplingHook : MonoBehaviour {
         }
 
         if (isHooked) {
-            if (Vector3.Distance(cam.transform.position, hit.point) > distance + addedRadius/2) {
+            if (Vector3.Distance(body.transform.position, hit.point) > distance + addedRadius*2) {
                 AttachHook(2);
             }
             else {
@@ -74,7 +75,7 @@ public class GrapplingHook : MonoBehaviour {
     private void AttachHook(float addedRadiusMultiplier = 1f) {
         isHooked = true;
 
-        distance = Vector3.Distance(hit.point, cam.transform.position) + addedRadius * addedRadiusMultiplier / 2;
+        distance = Vector3.Distance(hit.point, body.transform.position) + addedRadius * addedRadiusMultiplier / 2;
         transform.position = hit.point;
         transform.localScale = new Vector3(distance * 2, distance * 2, distance * 2);
 
@@ -89,8 +90,7 @@ public class GrapplingHook : MonoBehaviour {
     }
 
     private void UpdateRope() {
-        var position = cam.transform.position;
-        position.y -= 1;
+        var position = body.transform.position;
         rope.SetPositions(new Vector3[] { position , hit.point });
     }
 }
