@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 82368131579966268}
   - component: {fileID: 82702860513630792}
   - component: {fileID: 82569693435176332}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: RigidBodyFPSController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -27,14 +27,14 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 100006}
-  m_LocalRotation: {x: -0, y: 0.70988905, z: -0, w: 0.7043136}
-  m_LocalPosition: {x: 221, y: 37.782, z: 244.6}
+  m_LocalRotation: {x: -0, y: 0.0039419085, z: -0, w: 0.99999225}
+  m_LocalPosition: {x: 202.57, y: 22.198, z: -3.98}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4471398985245248}
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 90.452, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0.45200002, z: 0}
 --- !u!1001 &100100000
 Prefab:
   m_ObjectHideFlags: 1
@@ -57,7 +57,7 @@ GameObject:
   - component: {fileID: 20135482312662922}
   - component: {fileID: 81217657522197296}
   - component: {fileID: 124185334327978170}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Camera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
@@ -71,7 +71,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1337631382958354}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5999985, z: 0}
+  m_LocalPosition: {x: 0, y: 0.205, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 400002}
@@ -93,7 +93,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.1
   far clip plane: 6000
   field of view: 100
   orthographic: 0
@@ -119,14 +119,14 @@ Rigidbody:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 100006}
   serializedVersion: 2
-  m_Mass: 10
+  m_Mass: 2.5
   m_Drag: 0
   m_AngularDrag: 0
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
-  m_CollisionDetection: 1
+  m_CollisionDetection: 0
 --- !u!81 &81217657522197296
 AudioListener:
   m_ObjectHideFlags: 1
@@ -393,15 +393,18 @@ MonoBehaviour:
   soundSkiFast: {fileID: 8300000, guid: 341178b34b8277a45a0494051545c49a, type: 3}
   soundWind: {fileID: 8300000, guid: 0fafb5ca24dc6ee4cae06cd9f3a1effa, type: 3}
   jetpackSettings:
-    force: 1.5
+    force: 0.1
     verticleMultiplier: 1.5
-    highSpeed: 50
+    highSpeed: 25
     fuelMax: 300
     fuelUsageRate: 60
     fuelUsageDelay: 0.5
     fuelUsageThreshold: 30
     fuelRestoringRate: 150
     fuelRestoringDelay: 0.3
+    maxSpeed: 28.5
+    belowSpeedLimitDrag: 0
+    aboveSpeedLimitDrag: 1
   mouseLook:
     XSensitivity: 2
     YSensitivity: 2
@@ -427,7 +430,7 @@ CapsuleCollider:
   m_Material: {fileID: 13400000, guid: 28a6d5866b4cce24684a50798630dff1, type: 2}
   m_IsTrigger: 0
   m_Enabled: 1
-  m_Radius: 0.5
-  m_Height: 1.6
+  m_Radius: 0.125
+  m_Height: 0.4
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}

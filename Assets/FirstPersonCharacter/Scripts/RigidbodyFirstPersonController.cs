@@ -23,6 +23,7 @@ namespace Characters.FirstPerson
             public float maxSpeed = 60f;
             public float belowSpeedLimitDrag = 0f;
             public float aboveSpeedLimitDrag = 1f;
+            public float speedDisplayMultiplier = 4f;
         }
 
 
@@ -33,19 +34,18 @@ namespace Characters.FirstPerson
             public float shellOffset = 0.1f; //reduce the radius by that ratio to avoid getting stuck in wall (a value of 0.1f is nice)
         }
 
-        public Text jetpackFuelCounter;
-        public Text speedCounter;
+        public Text jetpackFuelCounter, speedCounter, pickupCounter;
 
         public Camera cam;
 
-        public AudioClip soundJet, soundSkiSlow, soundSkiFast, soundWind;
+        public AudioClip soundJet, soundSkiSlow, soundSkiFast, soundWind, soundPickup;
         public JetpackSettings jetpackSettings = new JetpackSettings();
         public MouseLook mouseLook = new MouseLook();
         public AdvancedSettings advancedSettings = new AdvancedSettings();
 
         private Rigidbody rigidBody;
         private CapsuleCollider capsule;
-        private AudioSource audioSkiing, audioWind, audioJet;
+        private AudioSource audioSkiing, audioWind, audioJet, audioPickup;
 
         private bool isGrounded;
 
@@ -54,6 +54,9 @@ namespace Characters.FirstPerson
         private bool isJetRestoring = false;
         private float jetEndedTime;
         private float jetRestoringStartedTime;
+
+        private int pickupsCollected = -1;
+        private int pickupsTotal = 0;
 
         public Vector3 Velocity {
             get { return rigidBody.velocity; }
@@ -77,8 +80,13 @@ namespace Characters.FirstPerson
             audioJet = aSources[2];
             audioJet.clip = soundJet;
             audioJet.Play();
+            audioPickup = aSources[3];
+            audioPickup.clip = soundPickup;
 
             SetJetpackFuel(jetpackSettings.fuelMax);
+
+            pickupsTotal = GameObject.FindGameObjectsWithTag("Pickup").Length;
+            HandlePickup();
         }
 
 
@@ -112,11 +120,11 @@ namespace Characters.FirstPerson
 
         private void SetJetpackFuel(float fuel) {
             jetpackFuel = fuel;
-            jetpackFuelCounter.text = "Fuel: " + Math.Floor(fuel).ToString();
+            jetpackFuelCounter.text = "Fuel: " + (jetpackSettings.fuelUsageRate == 0 ? "infinity" : Math.Floor(fuel).ToString());
         }
 
         private void DisplaySpeed(float speed) {
-            speedCounter.text = "Speed: " + Math.Floor(speed * 3.6).ToString() + "km/h";
+            speedCounter.text = "Speed: " + Math.Floor(speed * 3.6 * jetpackSettings.speedDisplayMultiplier).ToString() + "km/h";
         }
 
         private void HandleInput() {
@@ -220,6 +228,24 @@ namespace Characters.FirstPerson
                 Physics.AllLayers,
                 QueryTriggerInteraction.Ignore
             );
+        }
+
+        void OnTriggerEnter(Collider other) {
+            if (other.gameObject.CompareTag("Pickup")) {
+                other.gameObject.SetActive(false);
+                HandlePickup();
+                audioPickup.Play();
+            }
+        }
+
+        private void HandlePickup() {
+            SetJetpackFuel(jetpackSettings.fuelMax);
+            pickupsCollected++;
+            pickupCounter.text = "Stars: " + pickupsCollected + "/" + pickupsTotal;
+            if(pickupsCollected == pickupsTotal) {
+                jetpackSettings.fuelUsageRate = 0;
+                SetJetpackFuel(jetpackSettings.fuelMax);
+            }
         }
     }
 }
